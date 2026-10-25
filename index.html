@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F9D1D9">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Reading Journal">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Reading Journal</title>
+<style>
+:root{--bg:#F9D1D9;--circle:#687A43;--text:#49343B;--gold:#F7D457;--paper:#FFF7F8;--line:#687A43;--muted:#78616A;--shadow:0 2px 7px #49343B18}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.app{max-width:560px;margin:0 auto;min-height:100vh;padding-bottom:78px}
+header{padding:14px 16px 6px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-size:clamp(19px,4.5vw,27px);letter-spacing:1.2px;font-weight:bold}
+.iconbtn{border:0;background:transparent;font-size:27px;padding:8px;color:var(--text);min-width:44px;min-height:44px}
+.yearbar{display:flex;justify-content:center;align-items:center;gap:16px;margin:6px 0 12px;font-size:19px;font-weight:bold}
+.yearbar button{border:0;background:transparent;font-size:26px;padding:3px 8px}
+main{padding:0 14px}
+h2{font-size:16px;letter-spacing:.8px;margin:6px 0 10px}
+.card{border:1.5px solid var(--line);border-radius:14px;padding:14px;background:color-mix(in srgb,var(--bg),white 13%);box-shadow:var(--shadow);margin-bottom:18px}
+.challenge-head{font-size:14px;letter-spacing:1px;text-align:center;font-weight:bold}
+.count{font-size:clamp(36px,8vw,48px);text-align:center;margin:8px 0;color:var(--text);font-weight:bold}
+.remaining{text-align:center;margin:0 0 13px}
+.breakdown{text-align:center;font-size:14px}
+.challenge-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:5px;margin:12px 0 18px}
+.bubble{aspect-ratio:1;border-radius:50%;border:1.5px solid var(--line);background:transparent;display:flex;align-items:center;justify-content:center;font-size:clamp(10px,2.5vw,13px);padding:0;color:var(--text);min-width:0}
+.bubble.done{background:var(--circle);color:var(--gold);border-color:var(--circle)}
+.section-actions{display:flex;align-items:center;justify-content:space-between;margin:6px 0 16px}
+.search{width:100%;border:2px solid var(--line);border-radius:12px;background:transparent;padding:11px 13px;margin-bottom:15px}
+.book-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px 10px}
+.book{min-width:0;text-align:center;cursor:pointer}
+.cover{width:100%;aspect-ratio:2/3;object-fit:cover;border:2px solid var(--line);border-radius:5px;box-shadow:var(--shadow);background:var(--paper);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cover img{width:100%;height:100%;object-fit:cover}
+.cover-placeholder{padding:9px;text-align:center;font-size:clamp(12px,2vw,17px);font-weight:bold;overflow-wrap:anywhere}
+.book-num{font-size:12px;margin-top:6px;font-weight:bold}
+.book-title{font-size:14px;font-weight:bold;margin-top:3px;overflow-wrap:anywhere}
+.book-author{font-size:12px;margin-top:2px;overflow-wrap:anywhere}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:10;background:var(--circle);display:flex;justify-content:center;gap:0;padding:5px 12px calc(5px + env(safe-area-inset-bottom));min-height:62px}
+nav button{background:transparent;border:0;color:#FFF7F8;flex:1;max-width:240px;font-family:inherit;font-weight:bold;letter-spacing:1px;padding:8px}
+nav button.active{color:#F9D1D9}
+.hidden{display:none!important}
+.form-card{max-width:640px;margin:0 auto}
+label{display:block;font-weight:bold;margin:13px 0 6px}
+.field{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:9px;background:transparent}
+.form-actions{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:20px}
+.action{border:2px solid var(--line);border-radius:10px;padding:10px 15px;background:var(--circle);color:#fff4d6;font-weight:bold}
+.action.secondary{background:transparent;color:var(--text)}
+.rating{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.rating select{max-width:140px}
+.profile-cover{width:min(54%,220px);margin:0 auto 16px;aspect-ratio:2/3}
+.profile{text-align:center}
+.profile h2{font-size:24px;letter-spacing:0;margin-bottom:7px}
+.profile p{margin:6px 0}
+.modal{position:fixed;inset:0;background:#26171988;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.modal-panel{background:var(--bg);border:2px solid var(--line);border-radius:18px;padding:20px;width:min(100%,560px);max-height:92vh;overflow:auto}
+.modal-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+.notice{font-size:13px;opacity:.85;line-height:1.4}
+.empty{text-align:center;padding:28px 8px}
+@media(min-width:650px){.app{max-width:560px}.book-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 10px}.challenge-grid{gap:5px}nav{min-height:62px}}
+@media(max-width:390px){.challenge-grid{gap:5px}.bubble{border-width:1px}.card{padding:12px}.brand{letter-spacing:.6px}}.bubble{border-width:1px}.card{padding:14px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand">READING JOURNAL</div>
+
+</header>
+<div class="yearbar"><button id="prevYear" aria-label="Předchozí rok">‹</button><span id="yearLabel">2026</span><button id="nextYear" aria-label="Další rok">›</button></div>
+<main>
+<section id="overview">
+  <div class="card">
+    <div class="challenge-head" id="challengeTitle">PRŮBĚH ROČNÍ VÝZVY (2026)</div>
+    <div class="count" id="challengeCount">0 / 0</div>
+    <p class="remaining" id="remaining">Nastav si cíl pro tento rok.</p>
+    <div class="breakdown" id="breakdown"></div>
+  </div>
+  <div id="challengeGrid" class="challenge-grid"></div>
+</section>
+<section id="library" class="hidden">
+  <div class="section-actions">
+    <h2 style="margin:0">KNIHOVNA</h2>
+    <div><button class="iconbtn" id="searchToggle" aria-label="Hledat">⌕</button><button class="iconbtn" id="addBtn" aria-label="Přidat knihu">＋</button></div>
+  </div>
+  <input class="search hidden" id="searchInput" type="search" placeholder="Hledat podle názvu nebo autora…">
+  <div id="bookGrid" class="book-grid"></div>
+  <div id="emptyLibrary" class="empty">Zatím tu nejsou žádné knihy.<br>Začni klepnutím na ＋</div>
+</section>
+<section id="editor" class="hidden">
+  <div class="form-card card">
+    <h2 id="editorTitle">PŘIDAT KNIHU</h2>
+    <label for="coverInput">Obálka knihy</label>
+    <input class="field" id="coverInput" type="file" accept="image/*">
+    <div id="coverPreview" style="margin-top:10px"></div>
+    <label for="titleInput">Název knihy</label><input class="field" id="titleInput" autocomplete="off" placeholder="Název">
+    <label for="authorInput">Autor</label><input class="field" id="authorInput" autocomplete="off" placeholder="Autor">
+    <label for="typeInput">Typ knihy</label><select class="field" id="typeInput"><option value="">Nezvoleno</option><option value="Tištěná">Tištěná</option><option value="E-kniha">E-kniha</option></select>
+    <label for="ratingInput">Hodnocení</label><select class="field" id="ratingInput"><option value="">Bez hodnocení</option><option>0.5</option><option>1</option><option>1.5</option><option>2</option><option>2.5</option><option>3</option><option>3.5</option><option>4</option><option>4.5</option><option>5</option></select>
+    <div class="form-actions"><button class="action secondary" id="cancelEdit">ZRUŠIT</button><button class="action" id="saveBook">ULOŽIT KNIHU</button></div>
+  </div>
+</section>
+</main>
+<nav><button id="navOverview" class="active">▦<br>PŘEHLED</button><button id="navLibrary">▤<br>KNIHOVNA</button></nav>
+</div>
+<div id="modalRoot"></div>
+<script>
+const DB_NAME='reading-journal-web', DB_VERSION=1;
+let db, currentYear=new Date().getFullYear(), currentTab='overview', editingId=null, chosenCover='', books=[], targets={};
+const $=id=>document.getElementById(id);
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains('state'))d.createObjectStore('state');};req.onsuccess=()=>{db=req.result;resolve(db)};req.onerror=()=>reject(req.error)})}
+function getState(key){return new Promise((resolve,reject)=>{const r=db.transaction('state','readonly').objectStore('state').get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+function putState(key,value){return new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(value,key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+function yearKey(y){return 'books-'+y}
+async function load(){await openDB();targets=await getState('targets')||{};applySettings();await loadYear();render()}
+async function loadYear(){books=await getState(yearKey(currentYear))||[];if(targets[currentYear]==null){let v=prompt(`Kolik knih chceš přečíst v roce ${currentYear}? Zadej roční cíl:`, '100');let n=Number(v);if(Number.isInteger(n)&&n>0){targets[currentYear]=n;await putState('targets',targets)}else{targets[currentYear]=100;await putState('targets',targets)}}}
+function applySettings(){document.documentElement.style.setProperty('--bg','#F9D1D9');document.documentElement.style.setProperty('--circle','#687A43');document.documentElement.style.setProperty('--text','#49343B');document.querySelector('meta[name="theme-color"]').content='#F9D1D9'}
+function go(tab){currentTab=tab;['overview','library','editor'].forEach(s=>$(s).classList.toggle('hidden',s!==tab));$('navOverview').classList.toggle('active',tab==='overview');$('navLibrary').classList.toggle('active',tab==='library');$('yearLabel').parentElement.classList.toggle('hidden',tab==='editor');render()}
+function sorted(){return [...books].sort((a,b)=>b.createdAt-a.createdAt)}
+function render(){ $('yearLabel').textContent=currentYear; $('challengeTitle').textContent=`PRŮBĚH ROČNÍ VÝZVY (${currentYear})`;const goal=targets[currentYear]||100;const done=books.length;$('challengeCount').textContent=`${done} / ${goal}`;$('remaining').textContent=done>=goal?'Cíl splněn!':`Do splnění cíle zbývá ještě ${goal-done} ${plural(goal-done)}.`;const printed=books.filter(b=>b.type==='Tištěná').length,ebook=books.filter(b=>b.type==='E-kniha').length;$('breakdown').textContent=`${printed} tištěných · ${ebook} e-knih`;const grid=$('challengeGrid');grid.innerHTML='';for(let i=1;i<=goal;i++){const b=document.createElement('button');b.className='bubble'+(i<=done?' done':'');b.textContent=i;if(i<=done){b.title='Zobrazit knihu';b.onclick=()=>showBook(sorted()[done-i]||sorted()[0],true)}grid.appendChild(b)}renderBooks()}
+function plural(n){if(n===1)return 'kniha';if(n>=2&&n<=4)return 'knihy';return 'knih'}
+function renderBooks(){const query=$('searchInput').value.trim().toLocaleLowerCase('cs');const list=sorted().filter(b=>!query||`${b.title} ${b.author}`.toLocaleLowerCase('cs').includes(query));const grid=$('bookGrid');grid.innerHTML='';list.forEach((b,index)=>{const el=document.createElement('div');el.className='book';el.onclick=()=>showBook(b,false);el.innerHTML=`<div class="cover">${b.cover?`<img alt="" src="${b.cover}">`:`<div class="cover-placeholder">${escapeHtml(b.title||'Bez názvu')}</div>`}</div><div class="book-num">#${books.length-(sorted().findIndex(x=>x.id===b.id))}</div><div class="book-title">${escapeHtml(b.title||'Bez názvu')}</div><div class="book-author">${escapeHtml(b.author||'')}</div>`;grid.appendChild(el)});$('emptyLibrary').classList.toggle('hidden',list.length>0);$('emptyLibrary').textContent=query?'Žádné knihy neodpovídají hledání.':'Zatím tu nejsou žádné knihy. Začni klepnutím na ＋'}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function openEditor(book=null){editingId=book?.id||null;chosenCover=book?.cover||'';$('editorTitle').textContent=book?'UPRAVIT KNIHU':'PŘIDAT KNIHU';$('titleInput').value=book?.title||'';$('authorInput').value=book?.author||'';$('typeInput').value=book?.type||'';$('ratingInput').value=book?.rating??'';$('coverInput').value='';$('coverPreview').innerHTML=chosenCover?`<img src="${chosenCover}" alt="Náhled obálky" style="width:100px;border:2px solid var(--line)">`:'';go('editor')}
+$('coverInput').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{chosenCover=reader.result;$('coverPreview').innerHTML=`<img src="${chosenCover}" alt="Náhled obálky" style="width:100px;border:2px solid var(--line)">`};reader.readAsDataURL(file)});
+$('saveBook').onclick=async()=>{const book={id:editingId||crypto.randomUUID(),title:$('titleInput').value.trim(),author:$('authorInput').value.trim(),type:$('typeInput').value,rating:$('ratingInput').value?Number($('ratingInput').value):null,cover:chosenCover,createdAt:editingId?(books.find(b=>b.id===editingId)?.createdAt||Date.now()):Date.now()};if(editingId){books=books.map(b=>b.id===editingId?book:b)}else books.push(book);await putState(yearKey(currentYear),books);go('library')};
+$('cancelEdit').onclick=()=>go('library');$('addBtn').onclick=()=>openEditor();$('navOverview').onclick=()=>go('overview');$('navLibrary').onclick=()=>go('library');
+$('prevYear').onclick=async()=>{currentYear--;await loadYear();render()};$('nextYear').onclick=async()=>{currentYear++;await loadYear();render()};
+$('searchToggle').onclick=()=>{$('searchInput').classList.toggle('hidden');if(!$('searchInput').classList.contains('hidden'))$('searchInput').focus();else{$('searchInput').value='';renderBooks()}};
+$('searchInput').addEventListener('input',renderBooks);
+
+function showBook(b,readonly){if(!b)return;const num=books.length-sorted().findIndex(x=>x.id===b.id);const root=$('modalRoot');root.innerHTML=`<div class="modal" role="dialog" aria-modal="true"><div class="modal-panel profile"><div class="cover profile-cover">${b.cover?`<img src="${b.cover}" alt="Obálka knihy">`:`<div class="cover-placeholder">${escapeHtml(b.title||'Bez názvu')}</div>`}</div><h2>${escapeHtml(b.title||'Bez názvu')}</h2><p>${escapeHtml(b.author||'')}</p><p>Kniha č. ${num}</p>${b.type?`<p>${escapeHtml(b.type)}</p>`:''}${b.rating!=null?`<p>Hodnocení: ${'★'.repeat(Math.floor(b.rating))}${b.rating%1?'½':''} (${b.rating}/5)</p>`:''}<div class="modal-actions">${readonly?'<button class="action secondary" data-close>ZAVŘÍT</button>':'<button class="action secondary" data-delete>ODSTRANIT KNIHU</button><button class="action" data-edit>UPRAVIT</button>'}</div></div></div>`;root.querySelector('[data-close]')?.addEventListener('click',closeModal);root.querySelector('[data-edit]')?.addEventListener('click',()=>{closeModal();openEditor(b)});root.querySelector('[data-delete]')?.addEventListener('click',async()=>{if(confirm('Chcete tuto knihu opravdu odstranit?')){books=books.filter(x=>x.id!==b.id);await putState(yearKey(currentYear),books);closeModal();render()}});root.querySelector('.modal').addEventListener('click',e=>{if(e.target.classList.contains('modal'))closeModal()})}
+function closeModal(){$('modalRoot').innerHTML=''}
+load().catch(e=>{console.error(e);alert('Nepodařilo se načíst úložiště. Zkus aplikaci otevřít v aktuálním prohlížeči.')});
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('Service worker registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "Reading Journal",
+  "short_name": "Reading Journal",
+  "description": "Osobní deník čtení a roční čtenářská výzva.",
+  "lang": "cs-CZ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F9D1D9",
+  "theme_color": "#F9D1D9",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}
