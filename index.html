@@ -72,7 +72,7 @@ label{display:block;font-weight:bold;margin:13px 0 6px}
 <div class="app">
 <header>
   <div class="brand">READING JOURNAL</div>
-
+  <button class="iconbtn" id="backupHeaderBtn" aria-label="Záloha" title="Záloha">💾</button>
 </header>
 <div class="yearbar"><button id="prevYear" aria-label="Předchozí rok">‹</button><span id="yearLabel">2026</span><button id="nextYear" aria-label="Další rok">›</button></div>
 <main>
@@ -107,8 +107,19 @@ label{display:block;font-weight:bold;margin:13px 0 6px}
     <div class="form-actions"><button class="action secondary" id="cancelEdit">ZRUŠIT</button><button class="action" id="saveBook">ULOŽIT KNIHU</button></div>
   </div>
 </section>
+<section id="backup" class="hidden">
+  <div class="card">
+    <h2>ZÁLOHA DENÍKU</h2>
+    <p>Ulož si kopii všech knih, obálek a ročních cílů do souboru. Zálohu si nech třeba v aplikaci Soubory nebo na iCloudu.</p>
+    <button class="action" id="exportBackup" style="width:100%;margin:8px 0">STÁHNOUT ZÁLOHU</button>
+    <label for="backupFile">Obnovit ze zálohy</label>
+    <input class="field" id="backupFile" type="file" accept=".json,application/json">
+    <button class="action secondary" id="importBackup" style="width:100%;margin-top:12px">OBNOVIT ZE SOUBORU</button>
+    <p class="notice" style="margin-top:16px">Důležité: obnovení nahradí aktuální data v tomto prohlížeči daty ze zálohy. Před obnovením si případně nejdřív stáhni aktuální zálohu. Záloha obsahuje také obrázky obálek, takže soubor může být větší.</p>
+  </div>
+</section>
 </main>
-<nav><button id="navOverview" class="active">▦<br>PŘEHLED</button><button id="navLibrary">▤<br>KNIHOVNA</button></nav>
+<nav><button id="navOverview" class="active">▦<br>PŘEHLED</button><button id="navLibrary">▤<br>KNIHOVNA</button><button id="navBackup">💾<br>ZÁLOHA</button></nav>
 </div>
 <div id="modalRoot"></div>
 <script>
@@ -122,7 +133,7 @@ function yearKey(y){return 'books-'+y}
 async function load(){await openDB();targets=await getState('targets')||{};applySettings();await loadYear();render()}
 async function loadYear(){books=await getState(yearKey(currentYear))||[];if(targets[currentYear]==null){let v=prompt(`Kolik knih chceš přečíst v roce ${currentYear}? Zadej roční cíl:`, '100');let n=Number(v);if(Number.isInteger(n)&&n>0){targets[currentYear]=n;await putState('targets',targets)}else{targets[currentYear]=100;await putState('targets',targets)}}}
 function applySettings(){document.documentElement.style.setProperty('--bg','#F9D1D9');document.documentElement.style.setProperty('--circle','#687A43');document.documentElement.style.setProperty('--text','#49343B');document.querySelector('meta[name="theme-color"]').content='#F9D1D9'}
-function go(tab){currentTab=tab;['overview','library','editor'].forEach(s=>$(s).classList.toggle('hidden',s!==tab));$('navOverview').classList.toggle('active',tab==='overview');$('navLibrary').classList.toggle('active',tab==='library');$('yearLabel').parentElement.classList.toggle('hidden',tab==='editor');render()}
+function go(tab){currentTab=tab;['overview','library','editor','backup'].forEach(s=>$(s).classList.toggle('hidden',s!==tab));$('navOverview').classList.toggle('active',tab==='overview');$('navLibrary').classList.toggle('active',tab==='library');$('navBackup').classList.toggle('active',tab==='backup');$('yearLabel').parentElement.classList.toggle('hidden',tab==='editor'||tab==='backup');render()}
 function sorted(){return [...books].sort((a,b)=>b.createdAt-a.createdAt)}
 function render(){ $('yearLabel').textContent=currentYear; $('challengeTitle').textContent=`PRŮBĚH ROČNÍ VÝZVY (${currentYear})`;const goal=targets[currentYear]||100;const done=books.length;$('challengeCount').textContent=`${done} / ${goal}`;$('remaining').textContent=done>=goal?'Cíl splněn!':`Do splnění cíle zbývá ještě ${goal-done} ${plural(goal-done)}.`;const printed=books.filter(b=>b.type==='Tištěná').length,ebook=books.filter(b=>b.type==='E-kniha').length;$('breakdown').textContent=`${printed} tištěných · ${ebook} e-knih`;const grid=$('challengeGrid');grid.innerHTML='';for(let i=1;i<=goal;i++){const b=document.createElement('button');b.className='bubble'+(i<=done?' done':'');b.textContent=i;if(i<=done){b.title='Zobrazit knihu';b.onclick=()=>showBook(sorted()[done-i]||sorted()[0],true)}grid.appendChild(b)}renderBooks()}
 function plural(n){if(n===1)return 'kniha';if(n>=2&&n<=4)return 'knihy';return 'knih'}
@@ -131,13 +142,44 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function openEditor(book=null){editingId=book?.id||null;chosenCover=book?.cover||'';$('editorTitle').textContent=book?'UPRAVIT KNIHU':'PŘIDAT KNIHU';$('titleInput').value=book?.title||'';$('authorInput').value=book?.author||'';$('typeInput').value=book?.type||'';$('ratingInput').value=book?.rating??'';$('coverInput').value='';$('coverPreview').innerHTML=chosenCover?`<img src="${chosenCover}" alt="Náhled obálky" style="width:100px;border:2px solid var(--line)">`:'';go('editor')}
 $('coverInput').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{chosenCover=reader.result;$('coverPreview').innerHTML=`<img src="${chosenCover}" alt="Náhled obálky" style="width:100px;border:2px solid var(--line)">`};reader.readAsDataURL(file)});
 $('saveBook').onclick=async()=>{const book={id:editingId||crypto.randomUUID(),title:$('titleInput').value.trim(),author:$('authorInput').value.trim(),type:$('typeInput').value,rating:$('ratingInput').value?Number($('ratingInput').value):null,cover:chosenCover,createdAt:editingId?(books.find(b=>b.id===editingId)?.createdAt||Date.now()):Date.now()};if(editingId){books=books.map(b=>b.id===editingId?book:b)}else books.push(book);await putState(yearKey(currentYear),books);go('library')};
-$('cancelEdit').onclick=()=>go('library');$('addBtn').onclick=()=>openEditor();$('navOverview').onclick=()=>go('overview');$('navLibrary').onclick=()=>go('library');
+$('cancelEdit').onclick=()=>go('library');$('addBtn').onclick=()=>openEditor();$('navOverview').onclick=()=>go('overview');$('navLibrary').onclick=()=>go('library');$('navBackup').onclick=()=>go('backup');$('backupHeaderBtn').onclick=()=>go('backup');
 $('prevYear').onclick=async()=>{currentYear--;await loadYear();render()};$('nextYear').onclick=async()=>{currentYear++;await loadYear();render()};
 $('searchToggle').onclick=()=>{$('searchInput').classList.toggle('hidden');if(!$('searchInput').classList.contains('hidden'))$('searchInput').focus();else{$('searchInput').value='';renderBooks()}};
 $('searchInput').addEventListener('input',renderBooks);
 
 function showBook(b,readonly){if(!b)return;const num=books.length-sorted().findIndex(x=>x.id===b.id);const root=$('modalRoot');root.innerHTML=`<div class="modal" role="dialog" aria-modal="true"><div class="modal-panel profile"><div class="cover profile-cover">${b.cover?`<img src="${b.cover}" alt="Obálka knihy">`:`<div class="cover-placeholder">${escapeHtml(b.title||'Bez názvu')}</div>`}</div><h2>${escapeHtml(b.title||'Bez názvu')}</h2><p>${escapeHtml(b.author||'')}</p><p>Kniha č. ${num}</p>${b.type?`<p>${escapeHtml(b.type)}</p>`:''}${b.rating!=null?`<p>Hodnocení: ${'★'.repeat(Math.floor(b.rating))}${b.rating%1?'½':''} (${b.rating}/5)</p>`:''}<div class="modal-actions">${readonly?'<button class="action secondary" data-close>ZAVŘÍT</button>':'<button class="action secondary" data-delete>ODSTRANIT KNIHU</button><button class="action" data-edit>UPRAVIT</button>'}</div></div></div>`;root.querySelector('[data-close]')?.addEventListener('click',closeModal);root.querySelector('[data-edit]')?.addEventListener('click',()=>{closeModal();openEditor(b)});root.querySelector('[data-delete]')?.addEventListener('click',async()=>{if(confirm('Chcete tuto knihu opravdu odstranit?')){books=books.filter(x=>x.id!==b.id);await putState(yearKey(currentYear),books);closeModal();render()}});root.querySelector('.modal').addEventListener('click',e=>{if(e.target.classList.contains('modal'))closeModal()})}
 function closeModal(){$('modalRoot').innerHTML=''}
+
+async function makeBackup(){
+  const keys=await new Promise((resolve,reject)=>{const tx=db.transaction('state','readonly');const req=tx.objectStore('state').getAllKeys();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});
+  const entries=[];
+  for(const key of keys){entries.push({key:String(key),value:await getState(key)})}
+  return {format:'reading-journal-backup',version:1,exportedAt:new Date().toISOString(),entries};
+}
+$('exportBackup').onclick=async()=>{
+  try{
+    const backup=await makeBackup();
+    const blob=new Blob([JSON.stringify(backup)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    const date=new Date().toISOString().slice(0,10);a.href=url;a.download=`reading-journal-zaloha-${date}.json`;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    alert('Záloha je připravená. Ulož soubor na bezpečné místo, například do aplikace Soubory nebo na iCloud Drive.');
+  }catch(e){console.error(e);alert('Zálohu se nepodařilo vytvořit. Zkus to prosím znovu.')}
+};
+$('importBackup').onclick=async()=>{
+  const file=$('backupFile').files?.[0];
+  if(!file){alert('Nejdřív vyber soubor se zálohou.');return}
+  try{
+    const backup=JSON.parse(await file.text());
+    if(backup?.format!=='reading-journal-backup'||backup?.version!==1||!Array.isArray(backup.entries))throw new Error('Invalid backup');
+    if(!backup.entries.every(e=>e&&typeof e.key==='string'&&(e.key==='targets'||/^books-\d{4}$/.test(e.key))))throw new Error('Invalid keys');
+    if(!backup.entries.some(e=>e.key==='targets'))throw new Error('Missing targets');
+    if(!confirm('Obnovení nahradí všechny knihy a roční cíle uložené v tomto prohlížeči. Doporučuji nejdřív vytvořit aktuální zálohu. Chceš pokračovat?'))return;
+    await new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');const store=tx.objectStore('state');store.clear();for(const entry of backup.entries)store.put(entry.value,entry.key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Restore aborted'))});
+    targets=await getState('targets')||{};await loadYear();render();$('backupFile').value='';alert('Záloha byla obnovena.');
+  }catch(e){console.error(e);alert('Soubor se nepodařilo obnovit. Zkontroluj, že jde o zálohu vytvořenou Reading Journalem.')}
+};
+
 load().catch(e=>{console.error(e);alert('Nepodařilo se načíst úložiště. Zkus aplikaci otevřít v aktuálním prohlížeči.')});
 
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
